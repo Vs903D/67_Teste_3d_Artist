@@ -1,63 +1,53 @@
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
 public class MovimentoDoAsset : MonoBehaviour
 {
     public float velocidade = 5f;
-    public float rotacaoAngulo = 90f;
-    public float estabilizarAngulo = 0f;
-    public float rotacaoMouse = 1f; // Ângulo de rotação ao arrastar o mouse
+    public float rotaçãoMouse = 3f; // Ajuste a velocidade de rotação com o mouse
+    public float suavidadeDerrapagem = 10f; // Ajuste a suavidade da derrapagem
+
+    private CharacterController characterController;
+
+    private void Start()
+    {
+        characterController = GetComponent<CharacterController>();
+    }
 
     private void Update()
     {
         MovimentarAsset();
         RotacionarAssetComMouse();
-        EstabilizarAsset();
         VerificarEntradaUsuario();
     }
 
     private void MovimentarAsset()
     {
-        float movimentoHorizontal = Input.GetAxis("Horizontal");
-        float movimentoVertical = Input.GetAxis("Vertical");
+        float transH = Input.GetAxis("Vertical");  // Trocado de "Horizontal" para "Vertical"
+        float transV = Input.GetAxis("Horizontal");  // Trocado de "Vertical" para "Horizontal"
 
-        Vector3 movimento = new Vector3(movimentoHorizontal, 0f, movimentoVertical) * velocidade * Time.deltaTime;
+        // Aplicar suavidade para evitar derrapagem excessiva
+        transH = Mathf.Lerp(transH, 0f, Time.deltaTime * suavidadeDerrapagem);
+        transV = Mathf.Lerp(transV, 0f, Time.deltaTime * suavidadeDerrapagem);
 
-        // Manter a posição Y constante para garantir estabilidade
-        movimento.y = 0f;
+        Vector3 direcaoDesejada = new Vector3(transH, 0f, transV).normalized;
 
-        transform.Translate(movimento);
-
-        // Rotacionar 90 graus ao pressionar WASD
-        if (movimento != Vector3.zero)
-        {
-            float targetAngle = Mathf.Atan2(movimento.x, movimento.z) * Mathf.Rad2Deg;
-            float angle = Mathf.MoveTowardsAngle(transform.eulerAngles.y, targetAngle, rotacaoAngulo * Time.deltaTime);
-            transform.eulerAngles = new Vector3(0, angle, 0);
-        }
+        // Aplicar movimento usando CharacterController
+        Vector3 movimento = direcaoDesejada * velocidade * Time.deltaTime;
+        characterController.Move(movimento);
     }
 
     private void RotacionarAssetComMouse()
     {
-        // Rotacionar 90 graus ao clicar com o botão direito do mouse
-        if (Input.GetMouseButtonDown(1))
+        // Rotacionar ao movimentar o mouse para a direita
+        if (Input.GetAxis("Mouse X") > 0)
         {
-            transform.Rotate(Vector3.up, 90f);
+            transform.Rotate(Vector3.up, rotaçãoMouse * Time.deltaTime);
         }
-
-        // Rotacionar ao arrastar o mouse para o lado direito
-        if (Input.GetMouseButton(1))
+        // Rotacionar ao movimentar o mouse para a esquerda
+        else if (Input.GetAxis("Mouse X") < 0)
         {
-            float mouseX = Input.GetAxis("Mouse X") * rotacaoMouse;
-            transform.Rotate(Vector3.up, mouseX);
-        }
-    }
-
-    private void EstabilizarAsset()
-    {
-        // Estabilizar no eixo Z ao clicar com o botão esquerdo
-        if (Input.GetMouseButtonDown(0))
-        {
-            transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, estabilizarAngulo);
+            transform.Rotate(Vector3.up, -rotaçãoMouse * Time.deltaTime);
         }
     }
 
@@ -97,11 +87,6 @@ public class MovimentoDoAsset : MonoBehaviour
         }
     }
 }
-
-
-
-
-
 
 
 
